@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -z "$1" ]; then
+    echo "Mandatory host name not specified"
+    exit 1
+fi
+
+source $(dirname $(realpath $0))/../config/global
+source $(dirname $(realpath $0))/../scripts/colors
+
+templ=$workingdir/config/mpd/mpdscribble.conf
+source $workingdir/scripts/mo
+
+remote=${hostip[$1]}
+
+echo "${yellow}- Setting up mpdscribble with libre.fm ...${reset}"
+set_dark
+
+# make sure directories exist
+ssh root@$remote "mkdir -p \"$mpdscribble_state_dir\" && chown -R mpdscribble \"$mpdscribble_state_dir\""
+
+
+cat $templ | mo > "$target/mpdscribble-$1.conf"
+sha256sum "$target/mpdscribble-$1.conf" > "$target/mpdscribble-$1.conf.sha256"
+sed -i "s,$target/mpdscribble-$1.conf,/etc/mpdscribble.conf,g" "$target/mpdscribble-$1.conf.sha256"
+
+scp "$target/mpdscribble-$1.conf" "$target/mpdscribble-$1.conf.sha256" root@$remote:/tmp > /dev/null
+
+if ssh root@$remote "sha256sum -c /tmp/mpdscribble-$1.conf.sha256 2> /dev/null 1>&2"; then
+    echo "File /etc/mpdcsribble.conf not changed"
+else
+    echo "File /etc/mpdscribble.conf has changed."
+    ssh root@$remote "cp /tmp/mpdscribble-$1.conf /etc/mpdscribble.conf"
+    ssh root@$remote "systemctl restart mpdscribble"
+fi
+
+
+reset_color

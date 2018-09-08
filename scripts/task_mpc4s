@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -e
+if [ -z "$1" ]; then
+    echo "Mandatory host name not specified"
+    exit 1
+fi
+
+source $(dirname $(realpath $0))/../config/global
+source $(dirname $(realpath $0))/../scripts/colors
+
+templ=$workingdir/config/mpc4s/mpc4s.conf
+source $workingdir/scripts/mo
+
+remote=${hostip[$1]}
+
+mpd_more() {
+    content=$(cat)
+
+    for cfg in ${hosts[@]}; do
+        if [ "$cfg" != "$mpd_master" ]; then
+            title=${mpc4s_mpd_title[$cfg]}
+            host=${hostip["$cfg"]}
+            echo $content | sed "s,__ID__,$cfg," | sed "s,__TITLE__,$title," | sed "s,__HOST__,$host,"
+        fi
+    done
+}
+
+
+if [ "$mpd_master" = "$1" ]; then
+    echo "${yellow}- Installing mpc4s-player on mpd-master ...${reset}"
+    set_dark
+    ssh root@$remote "if [ ! -e $mpc4s_deb ] || [[ \"$mpc4s_deb\" =~ \"SNAPSHOT\" ]]; then curl -LO $mpc4s_deb_url; fi && dpkg -i $mpc4s_deb"
+
+    export mpd_music_dir
+    export mpd_max_connections
+    export mpd_master_title=${mpc4s_mpd_title["$mpd_master"]}
+
+    cat $templ | mo > $target/mpc4s-$1.conf
+    sha256sum $target/mpc4s-$1.conf > $target/mpc4s-$1.conf.sha256
+    sed -i "s,$target/mpc4s-$1.conf,/etc/mpc4s-player/mpc4s.conf,g" $target/mpc4s-$1.conf.sha256
+
+    scp $target/mpc4s-$1.conf $target/mpc4s-$1.conf.sha256 root@$remote:/tmp > /dev/null
+
+    if ssh root@$remote "sha256sum -c /tmp/mpc4s-$1.conf.sha256 2> /dev/null 1>&2"; then
+        echo "File /etc/mpc4s-player/mpc4s.conf not changed"
+    else
+        echo "File /etc/mpc4s-player/mpc4s.conf has changed"
+        ssh root@$remote "cp /tmp/mpc4s-$1.conf /etc/mpc4s-player/mpc4s.conf"
+    fi
+
+    ssh root@$remote "rm /tmp/mpc4s-$1.conf /tmp/mpc4s-$1.conf.sha256"
+    ssh root@$remote "systemctl restart mpc4s-player"
+    reset_color
+else
+    echo "${yellow}${dimmed}- Not running mpc4s task on mpd-proxies${reset}"
+fi

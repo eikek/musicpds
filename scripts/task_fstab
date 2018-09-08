@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -z "$1" ]; then
+    echo "Mandatory host name not specified"
+    exit 1
+fi
+
+source $(dirname $(realpath $0))/../config/global
+source $(dirname $(realpath $0))/../scripts/colors
+
+templ=$workingdir/config/fstab/fstab-add
+mo=$workingdir/scripts/mo
+
+remote=${hostip[$1]}
+
+echo "${yellow}- Setting up fstab ...${reset}"
+set_dark
+if ssh root@$remote "cat /etc/fstab | grep $samba_host" 2> /dev/null 1>&2; then
+    echo "Samba share //$samba_host/$samba_share already set up."
+else
+    echo "Setting up samba share in /etc/fstab..."
+    export samba_user
+    export samba_password
+    export samba_share
+    export samba_host
+    export samba_mount
+
+    fstabline=$(cat $templ | $mo)
+    ssh root@$remote "echo $fstabline >> /etc/fstab"
+fi
+
+ssh root@$remote "mkdir -p \"$samba_mount\""
+
+if ssh root@$remote "mount |grep $samba_mount" 2> /dev/null 1>&2; then
+    echo "Samba share already mounted."
+else
+    echo "Mounting samba share ..."
+    ssh root@$remote "mount \"$samba_mount\""
+fi
+reset_color

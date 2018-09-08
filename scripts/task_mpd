@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -z "$1" ]; then
+    echo "Mandatory host name not specified"
+    exit 1
+fi
+
+source $(dirname $(realpath $0))/../config/global
+source $(dirname $(realpath $0))/../scripts/colors
+
+templ=$workingdir/config/mpd/mpd.conf
+source $workingdir/scripts/mo
+
+remote=${hostip[$1]}
+
+echo "${yellow}- Setting up mpd.conf ...${reset}"
+set_dark
+export mpd_music_dir
+export mpd_playlist_dir
+export mpd_bind_address
+export mpd_bind_port
+export mpd_max_connections
+export mpd_metadata_to_use
+export mpd_log_file
+export mpd_pid_file
+export mpd_state_file
+export mpd_sticker_file
+
+if [ "$mpd_master" = "$1" ]; then
+    export mpd_master=true
+    unset mpd_proxy
+    export mpd_db_file="$mpd_state_dir/db"
+    export mpd_cache_dir="$mpd_state_dir/cache"
+else
+    export mpd_proxy=true
+    export mpd_master_ip=${hostip["$mpd_master"]}
+    export mpd_master_port=$mpd_bind_port
+    unset mpd_master
+fi
+
+export mpd_$1=true
+export mpd_name="MPD-$1"
+
+cat $templ | mo > $target/mpd-$1.conf
+sha256sum $target/mpd-$1.conf > $target/mpd-$1.conf.sha256
+sed -i "s,$target/mpd-$1.conf,/etc/mpd.conf,g" $target/mpd-$1.conf.sha256
+
+scp $target/mpd-$1.conf $target/mpd-$1.conf.sha256 root@$remote:/tmp > /dev/null
+
+if ssh root@$remote "sha256sum -c /tmp/mpd-$1.conf.sha256 2> /dev/null 1>&2"; then
+    echo "File /etc/mpd.conf not changed"
+else
+    echo "File /etc/mpd.conf has changed."
+    ssh root@$remote "cp /tmp/mpd-$1.conf /etc/mpd.conf"
+    ssh root@$remote "systemctl restart mpd"
+fi
+
+ssh root@$remote "rm /tmp/mpd-$1.conf /tmp/mpd-$1.conf.sha256"
+
+# ensure directories exist
+declare -a dirs=($mpd_playlist_dir $mpd_state_dir $mpd_cache_dir)
+for d in ${dirs[@]}; do
+    if [ -n "$d" ]; then
+        ssh root@$remote "mkdir -p \"$d\" >/dev/null"
+    fi
+done
+
+# install playlists
+echo "Installing playlists..."
+scp $workingdir/config/mpd/*.m3u root@${remote}:${mpd_playlist_dir}/ > /dev/null 2>&1
+
+for d in ${dirs[@]}; do
+    if [ -n "$d" ]; then
+        ssh root@$remote "chown -R mpd \"$d\""
+    fi
+done
+
+reset_color
