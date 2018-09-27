@@ -38,8 +38,8 @@ extra_packages[all]="mc curl mpdscribble iftop emacs25-nox"
 extra_packages[$mpd_master]="openjdk-8-jdk-headless"
 
 # Set the url to download the mpc4s-player package.
-mpc4s_deb="mpc4s-player_0.2.0_all.deb"
-mpc4s_deb_url="https://github.com/eikek/mpc4s/releases/download/v0.2.0/$mpc4s_deb"
+mpc4s_deb="mpc4s-player_0.3.0_all.deb"
+mpc4s_deb_url="https://github.com/eikek/mpc4s/releases/download/v0.3.0/$mpc4s_deb"
 
 # Settings for mounting the music directory via cifs.
 samba_mount="/mnt/samba"
@@ -67,6 +67,7 @@ mpc4s_bind_address="0.0.0.0"
 mpc4s_bind_port="9600"
 mpc4s_base_url="http://music.home"
 mpc4s_max_connections=$(expr $mpd_max_connections - 5)
+mpc4s_cover_dir="/home/dietpi_userdata/mpc4s/thumbnails"
 # The title is used in mpc4s frontend.
 declare -A mpc4s_mpd_title
 mpc4s_mpd_title[alloboss]="Wohnzimmer"
