@@ -1,1 +1,1 @@
-//{{samba_host}}/{{samba_share}} {{samba_mount}} cifs username={{samba_user}},password={{samba_password}},iocharset=utf8,vers=3.0,_netdev,nofail 0 0
+/dev/disk/by-label/media512     /mnt/usb        ext4    defaults,nofail 0       0
