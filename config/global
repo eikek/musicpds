@@ -28,7 +28,8 @@ declare -A hostip
 hostip[alloboss]=192.168.1.118
 hostip[justboom]=192.168.1.130
 hostip[hifiberry]=192.168.1.126
-hostip[travelpi]=192.168.178.53
+hostip[travelpi]=192.168.1.119
+hotspotip=192.168.42.1
 
 # The “master” mpd machine. This will run the mpc4s frontend and
 # maintains mpds database.
@@ -67,7 +68,7 @@ mpd_metadata_to_use="artist,artistsort,album,albumsort,albumartist,albumartistso
 mpc4s_name="Mpc4s"
 mpc4s_bind_address="0.0.0.0"
 mpc4s_bind_port="9600"
-mpc4s_base_url="http://${hostip[travelpi]}:9600"
+mpc4s_base_url="http://${hotspotip}:9600"
 mpc4s_max_connections=$(expr $mpd_max_connections - 5)
 mpc4s_cover_dir="/home/dietpi_userdata/mpc4s/thumbnails"
 # The title is used in mpc4s frontend.

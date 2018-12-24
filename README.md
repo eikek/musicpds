@@ -61,3 +61,37 @@ installed. When everything looks ok, run
 
 This will run necessary commands on the machine configured with
 `<name>`. Use special name `all` to run setup for all machines.
+
+## Travelpi
+
+This branch contains some changes to create a pi for travelling. An
+external disk is attached via USB that contains all the music. The
+wifi is configured to hotspot mode and
+[mpc4s](https://eikek.github.io/mpc4s/) is installed.
+
+The outcome is a self-contained music player that can be hooked up
+easily to any stereo (using RCA cables) or it can be used with head
+phones.
+
+Steps:
+
+1. Configure the Pi to act as a hotspot
+   - Run `dietpi-software`
+   - goto `Optimized Software` and choos `WiFi Hotspot` from the list
+   - Run `Install Software`
+   - Note: it might be necessary to reinstall it, if `dietpi-config`
+     doesn't recognize the hotspot
+2. Get the IP of the hotspot
+   - Log into your pi using the network cable and run `ip a`
+   - Memorize the IP address from your wifi device, it may be
+     `192.168.42.1`
+3. Configure MPC4S webplayer
+   - Go to `config/global` and add this ip to the `hotspotip`
+     variable.
+   - Make sure the `hostip[travelpi]` variable points to the correct
+     ip you use to connect via SSH.
+4. Check `config/global` again for correct settings. The USB disk
+   should be in `fstab`
+5. Run `mpds setup travelpi`
+6. try to connect to the new hotpsot and browse to the music player
+   using http://192.168.42.1:9600
