@@ -50,7 +50,7 @@ samba_share="Music"
 
 # Settings for MPD. These get interpolated into mpd.conf
 mpd_state_dir="/home/dietpi_userdata/mpd"
-mpd_music_dir="$samba_mount/Eike"
+mpd_music_dir="$samba_mount/MPD"
 mpd_playlist_dir="$mpd_state_dir/playlists"
 mpd_log_file="$mpd_state_dir/mpd.log"
 mpd_pid_file="$mpd_state_dir/mpd.pid"
